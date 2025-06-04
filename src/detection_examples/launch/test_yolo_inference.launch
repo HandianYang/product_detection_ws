@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="config_path" default="$(find object_detection)/config/class_list.yaml"/>
+  <arg name="weight_path" default="$(find object_detection)/weight/yolo11_v1.pt"/>
+  <arg name="confidence_threshold" default="0.7"/>
+  <arg name="display_enabled" default="true"/>
+
+  <!-- Launch Realsense camera -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+
+  <!-- Launch YOLO inference node -->
+  <node pkg="detection_examples" type="test_yolo_inference.py" name="test_yolo_inference" output="screen">
+    <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
+    <param name="display_enabled" value="$(arg display_enabled)"/>
+    <param name="weight_path" value="$(arg weight_path)"/>
+  </node>
+</launch>

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>detection_examples</name>
+  <version>1.0.0</version>
+  <description>
+    Demonstration package for supported object detection features
+  </description>
+  <license>Apache 2.0</license>
+  <maintainer email="ych0610765@gmail.com">Handian Yang</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- <build_depend>geometry_msgs</build_depend>
+  <exec_depend>geometry_msgs</exec_depend> -->
+
+  <!-- <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend> -->
+
+  <build_depend>rospy</build_depend>
+  <exec_depend>rospy</exec_depend>
+
+  <build_depend>sensor_msgs</build_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+
+  <!-- <build_depend>std_msgs</build_depend>
+  <exec_depend>std_msgs</exec_depend> -->
+
+</package>

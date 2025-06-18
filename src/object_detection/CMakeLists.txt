@@ -10,10 +10,9 @@ project(object_detection)
 # Find catkin packages and libraries for catkin and system dependencies
 ################################################################################
 find_package(catkin REQUIRED COMPONENTS
-  # geometry_msgs
+  geometry_msgs
   rospy
   sensor_msgs
-  # std_msgs
 )
 find_package(OpenCV REQUIRED)
 
@@ -37,10 +36,9 @@ catkin_python_setup()
 
 catkin_package(
   CATKIN_DEPENDS
-    # geometry_msgs
+    geometry_msgs
     rospy
     sensor_msgs
-    # std_msgs
 )
 
 ################################################################################
@@ -55,23 +53,6 @@ include_directories(
 ################################################################################
 # Install
 ################################################################################
-
-# Install Python scripts
-# catkin_install_python(PROGRAMS
-#     tests/test_yolo_inference.py
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-# Install Python modules
-# install(DIRECTORY
-#     scripts/object_detection
-#   DESTINATION ${CATKIN_PACKAGE_PYTHON_DESTINATION}
-# )
-
-# # Install launch files
-# install(DIRECTORY launch
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-# )
 
 
 ################################################################################

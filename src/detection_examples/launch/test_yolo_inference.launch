@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${node}]: ${message}"/>
+
   <arg name="config_path" default="$(find object_detection)/config/class_list.yaml"/>
   <arg name="weight_path" default="$(find object_detection)/weight/yolo11_v1.pt"/>
   <arg name="confidence_threshold" default="0.7"/>

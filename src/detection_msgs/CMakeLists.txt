@@ -28,6 +28,8 @@ add_message_files(
   BoundingBoxArray.msg
   DetectedObject.msg
   DetectedObjectArray.msg
+  InferenceResult.msg
+  InferenceResultArray.msg
 )
 
 generate_messages(

@@ -49,5 +49,6 @@ else
         --device=/dev/nvmap \
         --device=/dev/nvhost-gpu \
         --device=/dev/nvhost-as-gpu \
+        --add-host mars-nctu:192.168.10.1 \
         ${DOCKER_IMAGE}:${DOCKER_TAG}  
 fi

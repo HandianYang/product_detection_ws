@@ -4,7 +4,7 @@ xhost +local:docker
 # Setup specific docker image and tag
 DOCKER_IMAGE="handianyang/object-detection"
 DOCKER_TAG_NAME="cuda12.1.1-pytorch2.5.1-noetic"
-DOCKER_TAG_VERSION="v1.0.0"
+DOCKER_TAG_VERSION="v1.1.0"
 DOCKER_TAG="${DOCKER_TAG_NAME}-${DOCKER_TAG_VERSION}"
 CONTAINER_NAME="product-detection"
 

@@ -47,7 +47,7 @@ class YoloInference():
 
         self.__color_image_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.__camera_color_image_callback)
         self.__depth_image_subscriber = rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.__camera_depth_image_callback)
-        self.__camera_info_subscriber = rospy.Subscriber('/camera/color/camera_info', CameraInfo, self.__camera_info_callback)
+        self.__camera_info_subscriber = rospy.Subscriber('/camera/depth/camera_info', CameraInfo, self.__camera_info_callback)
 
         self.__detected_objects_publisher = rospy.Publisher('/yolo/detected_objects', DetectedObjectArray, queue_size=1)
     

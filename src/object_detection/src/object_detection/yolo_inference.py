@@ -1,26 +1,30 @@
 import rospy
 from detection_msgs.msg import DetectedObject, DetectedObjectArray
 from geometry_msgs.msg import Point
-import std_msgs.msg
 from sensor_msgs.msg import Image, CameraInfo
-import tf2_ros
 import tf2_geometry_msgs
+import tf2_ros
 
 import cv2
 from cv_bridge import CvBridge
+from enum import Enum
 import numpy as np
 from pathlib import Path
 import pyrealsense2 as rs
+from sklearn.cluster import DBSCAN
 from ultralytics import YOLO
 import yaml
 
+class CentroidEstimator(Enum):
+    BBOX = 1
+    POINTCLOUD = 2
 
-class YoloInference():
+class YoloInference:
     DEFAULT_CONFIDENCE_THRESHOLD = 0.7
     DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parent.parent.parent / "config/class_list.yaml")
     DEFAULT_WEIGHT_PATH = str(Path(__file__).resolve().parent.parent.parent / "weight/yolo11_v1.pt")
 
-    # The transformation from camera_link to tm_tip_link is defined as:
+    # The transformation from /camera_link to /tm_tip_link is defined as:
     #   x: from centerline to left imager (D435/D435i: 17.5 mm = 0.0175 m)
     #   y: by manual measurement (6 cm = 0.06 m)
     #   z: from /tm_tip_link origin to front glass cover by manual measurement (-9 cm = -0.09 m)
@@ -28,7 +32,9 @@ class YoloInference():
     #    = -0.0858 m
     CAMERA_LINK_TO_TIP_LINK_T = np.array([0.0175, 0.06, -0.0858])
 
-    def __init__(self):
+    def __init__(self, centroid_estimator: CentroidEstimator = CentroidEstimator.BBOX) -> None:
+        self.__centroid_estimator = centroid_estimator
+
         self.__confidence_threshold = rospy.get_param("~confidence_threshold", YoloInference.DEFAULT_CONFIDENCE_THRESHOLD)
         self.__config_path = rospy.get_param("~config_path", YoloInference.DEFAULT_CONFIG_PATH)
         self.__display_enabled = rospy.get_param("~display_enabled", False)
@@ -97,7 +103,10 @@ class YoloInference():
 
     # === Private Methods (supports get_inference_results()) ===
     def __get_centroid_wrt_base_link(self, bbox: list) -> Point:
-        centroid_wrt_camera_link = self.__estimate_centroid_from_bbox(bbox)
+        if self.__centroid_estimator == CentroidEstimator.BBOX:
+            centroid_wrt_camera_link = self.__estimate_centroid_from_bbox(bbox)
+        elif self.__centroid_estimator == CentroidEstimator.POINTCLOUD:
+            centroid_wrt_camera_link = self.__estimate_centroid_from_pointcloud(bbox)
         if centroid_wrt_camera_link is None:
             return None
         centroid_wrt_tip_link = self.__transfrom_camera_link_to_tip_link(centroid_wrt_camera_link)
@@ -133,6 +142,57 @@ class YoloInference():
             return None
         else:
             return float(np.median(valid))
+    
+    def __estimate_centroid_from_pointcloud(self, bbox: list) -> Point:
+        points = self.__get_deprojected_points(bbox)
+        cluster = self.__get_main_cluster(points)
+        if cluster is None:
+            return None
+
+        center = self.__compute_cluster_centroid(cluster)
+        center_point = Point()
+        center_point.x = center[0]
+        center_point.y = center[1]
+        center_point.z = center[2]
+        return center_point  # 3D position in camera frame
+
+    def __get_deprojected_points(self, bbox: list) -> np.ndarray:
+        x1, y1, x2, y2 = map(int, bbox)
+        
+        points = []
+        for v in range(y1, y2):
+            for u in range(x1, x2):
+                d = self.__depth_image[v, u]
+                if d == 0:
+                    continue
+                point = rs.rs2_deproject_pixel_to_point(self.__camera_intrinsics, [u, v], d)
+                points.append(point)
+
+        return np.array(points)  # shape: [N, 3]
+
+    def __get_main_cluster(self, points: np.ndarray, eps: float = 0.02, min_samples: int = 10) -> np.ndarray:
+        if len(points) < min_samples:
+            return None
+
+        clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(points)
+        labels = clustering.labels_
+
+        # Remove noise points
+        mask = labels != -1
+        labels = labels[mask]
+        points = points[mask]
+        if len(points) == 0:
+            return None
+
+        # Find the largest cluster
+        unique_labels, counts = np.unique(labels, return_counts=True)
+        largest_label = unique_labels[np.argmax(counts)]
+
+        main_cluster = points[labels == largest_label]
+        return main_cluster
+
+    def __compute_cluster_centroid(self, cluster_points: np.ndarray) -> np.ndarray:
+        return np.mean(cluster_points, axis=0)  # [x, y, z]
 
     def __transfrom_camera_link_to_tip_link(self, centroid_wrt_camera_link: Point) -> Point:
         centroid_wrt_tip_link = Point()

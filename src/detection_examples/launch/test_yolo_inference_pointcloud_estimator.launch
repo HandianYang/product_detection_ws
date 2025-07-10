@@ -8,8 +8,8 @@
   <!-- Launch Realsense camera -->
   <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
 
-  <!-- Launch YOLO inference node -->
-  <node pkg="detection_examples" type="test_yolo_inference.py" name="test_yolo_inference" output="screen">
+  <!-- Launch YOLO inference test-node with pointcloud centroid estimator -->
+  <node pkg="detection_examples" type="test_yolo_inference_pointcloud_estimator.py" name="test_yolo_inference_pointcloud_estimator" output="screen">
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
     <param name="config_path" value="$(arg config_path)"/>
     <param name="display_enabled" value="$(arg display_enabled)"/>

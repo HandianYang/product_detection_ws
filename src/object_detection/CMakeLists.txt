@@ -10,8 +10,10 @@ project(object_detection)
 # Find catkin packages and libraries for catkin and system dependencies
 ################################################################################
 find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
   rospy
   sensor_msgs
+  std_msgs
 )
 find_package(OpenCV REQUIRED)
 
@@ -35,8 +37,10 @@ catkin_python_setup()
 
 catkin_package(
   CATKIN_DEPENDS
+    geometry_msgs
     rospy
     sensor_msgs
+    std_msgs
 )
 
 ################################################################################

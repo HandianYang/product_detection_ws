@@ -24,8 +24,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  BoundingBox.msg
-  BoundingBoxArray.msg
   DetectedObject.msg
   DetectedObjectArray.msg
 )

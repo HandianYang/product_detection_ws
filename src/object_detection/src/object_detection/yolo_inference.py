@@ -52,10 +52,11 @@ class YoloInference:
         self.__tf_listener = tf2_ros.TransformListener(self.__tf_buffer)
 
         self.__color_image_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.__camera_color_image_callback)
-        self.__depth_image_subscriber = rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.__camera_depth_image_callback)
-        self.__camera_info_subscriber = rospy.Subscriber('/camera/depth/camera_info', CameraInfo, self.__camera_info_callback)
+        self.__depth_image_subscriber = rospy.Subscriber("/camera/aligned_depth_to_color/image_raw", Image, self.__camera_depth_image_callback)
+        # self.__depth_image_subscriber = rospy.Subscriber("/camera/depth/image_rect_raw", Image, self.__camera_depth_image_callback)
+        self.__camera_info_subscriber = rospy.Subscriber("/camera/aligned_depth_to_color/camera_info", CameraInfo, self.__camera_info_callback)
 
-        self.__detected_objects_publisher = rospy.Publisher('/yolo/detected_objects', DetectedObjectArray, queue_size=1)
+        self.__detected_objects_publisher = rospy.Publisher("/yolo/detected_objects", DetectedObjectArray, queue_size=1)
     
     # === Public Methods ===
     def get_inference_results(self) -> None:
@@ -130,18 +131,21 @@ class YoloInference:
         centroid.z = point[2]
         return centroid
 
-    def __compute_depth_around_center(self, u_center: int, v_center: int, delta: int = 20) -> float:
+    def __compute_depth_around_center(self, u_center: int, v_center: int, delta: int = 5) -> float:
+        center_depth = self.__depth_image[v_center, u_center]
+        if 0.2 < center_depth < 2:
+            return center_depth
+
         u_min = max(0, u_center - delta)
         u_max = min(self.__depth_image.shape[1], u_center + delta)
         v_min = max(0, v_center - delta)
         v_max = min(self.__depth_image.shape[0], v_center + delta)
         patch = self.__depth_image[u_min:u_max, v_min:v_max].flatten()
         valid = patch[(patch > 0.2) & (patch < 2)]
-
+        
         if len(valid) == 0:
             return None
-        else:
-            return float(np.median(valid))
+        return float(np.median(valid))
     
     def __estimate_centroid_from_pointcloud(self, bbox: list) -> Point:
         points = self.__get_deprojected_points(bbox)
@@ -196,8 +200,8 @@ class YoloInference:
 
     def __transfrom_camera_link_to_tip_link(self, centroid_wrt_camera_link: Point) -> Point:
         centroid_wrt_tip_link = Point()
-        centroid_wrt_tip_link.x = centroid_wrt_camera_link.x - YoloInference.CAMERA_LINK_TO_TIP_LINK_T[0]
-        centroid_wrt_tip_link.y = centroid_wrt_camera_link.y - YoloInference.CAMERA_LINK_TO_TIP_LINK_T[1]
+        centroid_wrt_tip_link.x = -(centroid_wrt_camera_link.x - YoloInference.CAMERA_LINK_TO_TIP_LINK_T[0])
+        centroid_wrt_tip_link.y = -(centroid_wrt_camera_link.y - YoloInference.CAMERA_LINK_TO_TIP_LINK_T[1])
         centroid_wrt_tip_link.z = centroid_wrt_camera_link.z - YoloInference.CAMERA_LINK_TO_TIP_LINK_T[2]
         return centroid_wrt_tip_link
     

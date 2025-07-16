@@ -6,7 +6,9 @@
   <arg name="weight_path" default="$(find object_detection)/weight/yolo11_v1.pt"/>
 
   <!-- Launch Realsense camera -->
-  <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="align_depth" value="true"/>
+  </include>
 
   <!-- Launch YOLO inference test-node with pointcloud centroid estimator -->
   <node pkg="detection_examples" type="test_yolo_inference_pointcloud_estimator.py" name="test_yolo_inference_pointcloud_estimator" output="screen">

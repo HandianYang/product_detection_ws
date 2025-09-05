@@ -53,7 +53,6 @@ class YoloInference:
 
         self.__color_image_subscriber = rospy.Subscriber("/camera/color/image_raw", Image, self.__camera_color_image_callback)
         self.__depth_image_subscriber = rospy.Subscriber("/camera/aligned_depth_to_color/image_raw", Image, self.__camera_depth_image_callback)
-        # self.__depth_image_subscriber = rospy.Subscriber("/camera/depth/image_rect_raw", Image, self.__camera_depth_image_callback)
         self.__camera_info_subscriber = rospy.Subscriber("/camera/aligned_depth_to_color/camera_info", CameraInfo, self.__camera_info_callback)
 
         self.__detected_objects_publisher = rospy.Publisher("/yolo/detected_objects", DetectedObjectArray, queue_size=1)
@@ -88,10 +87,10 @@ class YoloInference:
         for prediction in predictions.boxes:
             detected_object = DetectedObject()
             detected_object.label = self.__class_names[int(prediction.cls[0].item())]
+            detected_object.frame = 'odom'
             detected_object.confidence = prediction.conf[0].item()
-            detected_object.centroid = self.__get_centroid_wrt_base_link(prediction.xyxy[0].tolist())
+            detected_object.centroid = self.__get_centroid_wrt_odom(prediction.xyxy[0].tolist())
             if detected_object.centroid is None:
-                rospy.logwarn(f"Centroid for {detected_object.label} could not be computed. Skipping this object.")
                 continue
             detected_objects.objects.append(detected_object)
         self.__detected_objects_publisher.publish(detected_objects)
@@ -103,7 +102,7 @@ class YoloInference:
         return data['class_names']
 
     # === Private Methods (supports get_inference_results()) ===
-    def __get_centroid_wrt_base_link(self, bbox: list) -> Point:
+    def __get_centroid_wrt_odom(self, bbox: list) -> Point:
         if self.__centroid_estimator == CentroidEstimator.BBOX:
             centroid_wrt_camera_link = self.__estimate_centroid_from_bbox(bbox)
         elif self.__centroid_estimator == CentroidEstimator.POINTCLOUD:
@@ -112,9 +111,10 @@ class YoloInference:
             return None
         centroid_wrt_tip_link = self.__transfrom_camera_link_to_tip_link(centroid_wrt_camera_link)
         centroid_wrt_base_link = self.__transform_tip_link_to_base_link(centroid_wrt_tip_link)
-        if centroid_wrt_base_link is None:
+        centroid_wrt_odom = self.__transform_base_link_to_odom(centroid_wrt_base_link)
+        if centroid_wrt_odom is None:
             return None
-        return centroid_wrt_base_link
+        return centroid_wrt_odom
     
     def __estimate_centroid_from_bbox(self, bbox: list) -> Point:
         u_min, v_min, u_max, v_max = map(int, bbox)
@@ -215,6 +215,21 @@ class YoloInference:
             point_stamped.header.stamp = rospy.Time(0)
             point_stamped.point = centroid_wrt_tip_link
             transformed_point_stamped = self.__tf_buffer.transform(point_stamped, 'base_link', rospy.Duration(1.0))
+            return transformed_point_stamped.point
+        except Exception as e:
+            rospy.logerr(f"TF2 transform error: {e}")
+            return None
+    
+    def __transform_base_link_to_odom(self, centroid_wrt_tip_link: Point) -> Point:
+        try:
+            if not self.__tf_buffer.can_transform('odom', 'base_link', rospy.Time(0), rospy.Duration(1.0)):
+                rospy.logwarn("Cannot transform from /base_link to /odom")
+                return None
+            point_stamped = tf2_geometry_msgs.PointStamped()
+            point_stamped.header.frame_id = 'base_link'
+            point_stamped.header.stamp = rospy.Time(0)
+            point_stamped.point = centroid_wrt_tip_link
+            transformed_point_stamped = self.__tf_buffer.transform(point_stamped, 'odom', rospy.Duration(1.0))
             return transformed_point_stamped.point
         except Exception as e:
             rospy.logerr(f"TF2 transform error: {e}")

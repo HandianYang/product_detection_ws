@@ -3,15 +3,20 @@
   <arg name="confidence_threshold" default="0.7"/>
   <arg name="config_path" default="$(find object_detection)/config/class_list.yaml"/>  
   <arg name="display_enabled" default="true"/>
-  <arg name="weight_path" default="$(find object_detection)/weight/yolo11_v1.pt"/>
+  <arg name="pointcloud_enabled" default="true"/>
+  
+  <arg name="model_version" default="2"/>
+  <arg name="weight_path" default="$(find object_detection)/weight/yolo11_v$(arg model_version).pt"/>
 
   <!-- Launch Realsense camera -->
   <include file="$(find realsense2_camera)/launch/rs_camera.launch">
     <arg name="align_depth" value="true"/>
+    <arg name="filters" value="pointcloud" if="$(arg pointcloud_enabled)"/>
   </include>
 
-  <!-- Launch YOLO inference test-node with boundingbox centroid estimator -->
-  <node pkg="detection_examples" type="yolo_inference_bbox_estimator.py" name="yolo_inference_bbox_estimator" output="screen">
+  <!-- Launch YOLO inference test-node with pointcloud centroid estimator -->
+  <node pkg="detection_examples" type="yolo_inference_pointcloud_estimator.py"
+        name="yolo_inference_pointcloud_estimator" output="screen">
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
     <param name="config_path" value="$(arg config_path)"/>
     <param name="display_enabled" value="$(arg display_enabled)"/>

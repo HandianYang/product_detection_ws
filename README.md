@@ -16,30 +16,39 @@
 ### 1. Enter Docker container
 
 ```bash
-$ source docker_run.sh
+source docker_run.sh
 ```
 
 ### 2. Build ROS workspace
 
 ```bash
-# (Under the root directory of workspace)
-$ catkin_make
+catkin_make
 
 # ...or type the alias:
-$ cm
+cm
 ```
 
 ### 3. Link to `devel/` sources
 ```bash
-# (Under the root directory of workspace)
-$ source devel/setup.bash
+source devel/setup.bash
 
 # ...or type the alias:
-$ sd
+sd
+```
+
+### 4. Connect to robot (ROS master)
+```bash
+source switch_to_robot_ros_connection.sh
 ```
 
 
 ## Demonstration
+
+### Realsense point cloud demo
+
+```bash
+roslaunch detection_examples realsense_pointcloud_demo.launch
+```
 
 ### YOLO inference feature
 
@@ -48,11 +57,11 @@ $ sd
 #### Boundingbox centroid estimation
 
 ```bash
-$ roslaunch detection_examples test_yolo_inference_bbox_estimator.launch
+roslaunch detection_examples yolo_inference_bbox_estimator.launch
 ```
 
 #### Pointcloud centroid estimation
 
 ```bash
-$ roslaunch detection_examples test_yolo_inference_pointcloud_estimator.launch
+roslaunch detection_examples yolo_inference_pointcloud_estimator.launch
 ```

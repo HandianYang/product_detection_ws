@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Launch Realsense camera with pointcloud enabled -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="filters" value="pointcloud"/>
+  </include>
+
+  <!-- Launch RViz -->
+  <node name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find detection_examples)/rviz/realsense_pointcloud_demo.rviz"/>
+</launch>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Launch Realsense camera -->
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="align_depth" value="true"/>
+  </include>
+
+  <!-- Launch intrinsics calibrator node -->
+  <node pkg="detection_example" type="intrinsics_calibrator_node.py"
+        name="intrinsics_calibrator_node" output="screen"/>
+</launch>

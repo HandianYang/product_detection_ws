@@ -50,6 +50,8 @@ include_directories(
 
 # Install Python scripts
 catkin_install_python(PROGRAMS
+    examples/charuco_detector_node.py
+    examples/intrinsics_calibrator_node.py
     examples/yolo_inference_bbox_estimator.py
     examples/yolo_inference_pointcloud_estimator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

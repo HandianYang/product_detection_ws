@@ -65,3 +65,29 @@ roslaunch detection_examples yolo_inference_bbox_estimator.launch
 ```bash
 roslaunch detection_examples yolo_inference_pointcloud_estimator.launch
 ```
+
+### Eye-in-hand calibration
+
+#### Intrinsics calibrator
+
+A simple camera intrinsics calibrator for eye-in-hand architecture:
+
+```bash
+roslaunch detection_examples intrinsics_calibrator.launch
+```
+
+#### Extrinsics calibrator
+
+A simple camera extrinsics calibrator for eye-in-hand architecture:
+
+```bash
+roslaunch detection_examples eye_in_hand_calibration.launch
+```
+
+#### Extrinsics publisher
+
+A `/tm_tip_link` -> `/camera_link` TF publisher using camera extrinsics:
+
+```bash
+roslaunch detection_examples eye_in_hand_publish.launch
+```

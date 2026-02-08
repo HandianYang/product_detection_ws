@@ -22,4 +22,7 @@
     <param name="display_enabled" value="$(arg display_enabled)"/>
     <param name="weight_path" value="$(arg weight_path)"/>
   </node>
+
+  <!-- Launch TF broadcaster -->
+  <include file="$(find detection_examples)/launch/eye_in_hand_publish.launch"/>
 </launch>

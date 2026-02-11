@@ -4,8 +4,9 @@ import sys
 from geometry_msgs.msg import Point
 import rosbag
 
-POSITION_TOLERANCE = 0.05  # [m]
 HEIGHT_TOLERANCE = 0.15     # [m]
+POSITION_TOLERANCE = 0.05  # [m]
+PICK_AREA_RADIUS = 0.4  # [m]
 
 GRIPPER_TOPIC_NAME = '/gripper/cmd_gripper'
 GRIPPER_POSE_TOPIC_NAME = '/marslite_control/gripper_pose'
@@ -25,15 +26,16 @@ USAGE_PROMPT_MESSAGE = "\
 
 
 class SingleGraspingAnalyzer:
-    # START_DELAY_TIME = 0.5  # [s]
     LIFT_DISTANCE = 0.05    # [m]
 
     def __init__(self, bagfile_path: str):
-        self.__bagfile_path = bagfile_path
         self.__bag = rosbag.Bag(bagfile_path)
 
-        self.__start_time = None
-        self.__end_time = None
+        self.__timeline = {
+            'start': None,
+            'pick': None,
+            'end': None
+        }
         
         self.__gripper_position = Point()
         self.__is_gripper_closed = False
@@ -46,14 +48,30 @@ class SingleGraspingAnalyzer:
             JOY_TOPIC_NAME,
             OBJECTS_TOPIC_NAME
         ]
+
+    @staticmethod
+    def get_distance(pos1: Point, pos2: Point) -> float:
+        dx = pos1.x - pos2.x
+        dy = pos1.y - pos2.y
+        dz = pos1.z - pos2.z
+        return (dx * dx + dy * dy + dz * dz) ** 0.5
+    
+    @staticmethod
+    def get_xy_distance(pos1: Point, pos2: Point) -> float:
+        dx = pos1.x - pos2.x
+        dy = pos1.y - pos2.y
+        return (dx * dx + dy * dy) ** 0.5
+    
+    @staticmethod
+    def get_z_distance(pos1: Point, pos2: Point) -> float:
+        return abs(pos1.z - pos2.z)
     
     def analyze(self):
         '''
         The analyzer to collect data for single object grasping tasks.
         '''
         is_ready_to_record_object_position = False
-        # print(f"Analyzing {self.__bagfile_path} ...")
-
+        bag_start_time = self.__bag.get_start_time()
         for topic, msg, time in self.__bag.read_messages(topics=self.__topic_list):    
             if topic == GRIPPER_TOPIC_NAME:
                 self.__is_gripper_closed = msg.data
@@ -65,23 +83,21 @@ class SingleGraspingAnalyzer:
                 # [NOTE] The user can restart the timer by pressing the stick
                 #   button again
                 if msg.buttons[2] == 1: # analog stick button
-                    self.__start_time = time.to_sec()
+                    self.__timeline['start'] = time.to_sec() - bag_start_time
                     is_ready_to_record_object_position = True
-                    print(f"Record starts at {time.to_sec():.3f}")
             elif topic == GRIPPER_POSE_TOPIC_NAME:
                 self.__gripper_position = msg.pose.position
-                if self.__is_gripper_closed and self.__start_time is not None:
+                if self.__is_gripper_closed and self.__timeline['start'] is not None:
                     if self.__is_object_reached() and not self.__is_object_grasped:
+                        self.__timeline['pick'] = time.to_sec() - bag_start_time
                         self.__is_object_grasped = True
-                        print(f"Object grasped at {time.to_sec():.3f}")
                 else:
                     self.__is_object_grasped = False
 
             if self.__is_task_complete():
-                self.__end_time = time.to_sec()
-                print(f"Record ends at {time.to_sec():.3f}")
+                self.__timeline['end'] = time.to_sec() - bag_start_time
                 break
-
+        
         self.__bag.close()
     
     def __is_object_reached(self) -> bool:
@@ -91,10 +107,9 @@ class SingleGraspingAnalyzer:
         Looser tolerance is applied to the Z position difference so that user
         can decide the grasping height.
         '''
-        dx = self.__gripper_position.x - self.__object_position.x
-        dy = self.__gripper_position.y - self.__object_position.y
-        dz = self.__gripper_position.z - self.__object_position.z
-        return (dx * dx + dy * dy) ** 0.5 < POSITION_TOLERANCE and abs(dz) < HEIGHT_TOLERANCE
+        xy_dist = self.get_xy_distance(self.__gripper_position, self.__object_position)
+        z_dist = self.get_z_distance(self.__gripper_position, self.__object_position)
+        return xy_dist < POSITION_TOLERANCE and z_dist < HEIGHT_TOLERANCE
 
     def __is_task_complete(self) -> bool:
         '''
@@ -105,33 +120,34 @@ class SingleGraspingAnalyzer:
         2. The object has been grasped
         3. The object has been lifted up for enough distance
         '''
-        return self.__start_time is not None and self.__is_object_grasped and \
+        return self.__timeline['start'] is not None and self.__is_object_grasped and \
             (self.__gripper_position.z - self.__object_position.z) >= SingleGraspingAnalyzer.LIFT_DISTANCE
 
     def print_result(self) -> None:
-        if self.__start_time is None or self.__end_time is None:
+        if None in self.__timeline.values():
             print("[Error] Failed to get experiment result due to the following reason:")
-            if self.__start_time is None:
-                print("    - invalid start time")
-            if self.__end_time is None:
-                print("    - invalid end time")
+            if self.__timeline['start'] is None:
+                print("  - invalid start time")
+            if self.__timeline['pick'] is None:
+                print("  - invalid pick time")
+            if self.__timeline['end'] is None:
+                print("  - invalid end time")
             return
 
-        duration = self.__end_time - self.__start_time
+        duration = self.__timeline['end'] - self.__timeline['start']
         print(f"================== Experiment result ==================")
-        print(f"| Task Completion Time (TCT) : {duration:.3f} sec")
+        print(f"| Task Completion Time:\t{duration:.3f} sec")
+        print(f"|")
+        print(f"| Bagfile Timeline:")
+        print(f"| -- Begin:\t{self.__timeline['start']:.3f} sec")
+        print(f"| -- Pick:\t{self.__timeline['pick']:.3f} sec")
+        print(f"| -- Complete:\t{self.__timeline['end']:.3f} sec")
         print(f"=======================================================")
     
 
 class MultipleGraspingAnalyzer:
-    # START_DELAY_TIME = 0.5  # [s]
-
     def __init__(self, bagfile_path: str):
-        self.__bagfile_path = bagfile_path
         self.__bag = rosbag.Bag(bagfile_path)
-
-        self.__start_time = None
-        self.__end_time = None
 
         self.__gripper_position = Point()
         self.__is_gripper_closed = False
@@ -144,22 +160,51 @@ class MultipleGraspingAnalyzer:
             OBJECTS_TOPIC_NAME
         ]
 
-    def analyze(self) -> None:
-        is_ready_to_record_object_position = False
+        self.__timeline = {
+            'start': None,
+            'infer': list(),  # gripper enters pick area (intent inference starts working)
+            'picked': list(),   # gripper grasps an object
+            'placed': list(),  # gripper places the object
+            'end': None
+        }
 
-        # print(f"Analyzing {self.__bagfile_path} ...")
+    @staticmethod
+    def get_distance(pos1: Point, pos2: Point) -> float:
+        dx = pos1.x - pos2.x
+        dy = pos1.y - pos2.y
+        dz = pos1.z - pos2.z
+        return (dx * dx + dy * dy + dz * dz) ** 0.5
+    
+    @staticmethod
+    def get_xy_distance(pos1: Point, pos2: Point) -> float:
+        dx = pos1.x - pos2.x
+        dy = pos1.y - pos2.y
+        return (dx * dx + dy * dy) ** 0.5
+    
+    @staticmethod
+    def get_z_distance(pos1: Point, pos2: Point) -> float:
+        return abs(pos1.z - pos2.z)
+
+    def analyze(self) -> None:
+        num_complete_items = 0
+        target_id = -1
+        is_in_pick_area_now = True
+        is_ready_to_record_object_position = False
+        bag_start_time = self.__bag.get_start_time()
+
         for topic, msg, time in self.__bag.read_messages(topics=self.__topic_list):
             if topic == GRIPPER_TOPIC_NAME:
                 self.__is_gripper_closed = msg.data
             
             elif topic == OBJECTS_TOPIC_NAME:
-                if is_ready_to_record_object_position:
+                if is_ready_to_record_object_position and msg.objects:
                     self.__objects_status.clear()
                     for index, obj in enumerate(msg.objects):
                         self.__objects_status[index] = {
                             'label': obj.label,
                             'centroid': obj.centroid,
-                            'grasped': False
+                            'picked': False,
+                            'placed': False
                         }
                     is_ready_to_record_object_position = False
 
@@ -167,24 +212,62 @@ class MultipleGraspingAnalyzer:
                 # [NOTE] The user can restart the timer by pressing the stick
                 #   button again
                 if msg.buttons[2] == 1: # analog stick button
-                    self.__start_time = time.to_sec()
+                    self.__timeline['start'] = time.to_sec() - bag_start_time
                     is_ready_to_record_object_position = True
-                    print(f"Record starts at {time.to_sec():.3f}")
 
             elif topic == GRIPPER_POSE_TOPIC_NAME:
                 self.__gripper_position = msg.pose.position
-                if self.__is_gripper_closed and self.__start_time is not None:
+                if self.__timeline['start'] is None:
+                    continue
+                
+                ### Phase 1: Approach to pick area
+                if self.__is_in_pick_area():
+                    if not is_in_pick_area_now:
+                        # Record new time once only
+                        if len(self.__timeline['infer']) == num_complete_items:
+                            self.__timeline['infer'].append(time.to_sec() - bag_start_time)
+                    is_in_pick_area_now = True
+                else:
+                    is_in_pick_area_now = False
+
+                ### Phase 2: Approach to the object
+                if target_id == -1 and is_in_pick_area_now and self.__is_gripper_closed:
+                    candidates = {} # id : xy_dist
                     for obj_id, obj_info in self.__objects_status.items():
-                        if not obj_info['grasped'] and self.__is_object_reached(obj_info['centroid']):
-                            obj_info['grasped'] = True
-                            print(f"Object [{obj_info['label']}] (ID: {obj_id}) grasped at {time.to_sec():.3f}")
+                        if not obj_info['picked'] and self.__is_object_reached(obj_info['centroid']):
+                            candidates[obj_id] = self.get_xy_distance(self.__gripper_position, obj_info['centroid'])
+
+                    if not candidates:
+                        continue
+                    target_id = min(candidates, key=candidates.get)
+                    self.__objects_status[target_id]['picked'] = True
+                    self.__timeline['picked'].append(time.to_sec() - bag_start_time)
+
+                ### Phase 3: Transfer to the place area
+                if target_id != -1 and not self.__is_gripper_closed:
+                    self.__objects_status[target_id]['placed'] = True
+                    self.__timeline['placed'].append(time.to_sec() - bag_start_time)
+                    num_complete_items += 1
+                    target_id = -1
             
             if self.__is_task_complete():
-                self.__end_time = time.to_sec()
-                print(f"Record ends at {time.to_sec():.3f}")
+                self.__timeline['end'] = time.to_sec() - bag_start_time
                 break
-
+        
         self.__bag.close()
+
+    def __is_in_pick_area(self) -> bool:
+        '''
+        Detect whether the gripper is inside the pick area.
+
+        The pick area is defined as the union of the spheres centered at
+        centroids of the objects, with radius PICK_AREA_RADIUS.
+        '''
+        for obj_id, obj_info in self.__objects_status.items():
+            obj_dist = self.get_distance(self.__gripper_position, obj_info['centroid'])
+            if obj_dist < PICK_AREA_RADIUS:
+                return True
+        return False
 
     def __is_object_reached(self, object_position: Point) -> bool:
         '''
@@ -193,10 +276,9 @@ class MultipleGraspingAnalyzer:
         Looser tolerance is applied to the Z position difference so that user
         can decide the grasping height.
         '''
-        dx = self.__gripper_position.x - object_position.x
-        dy = self.__gripper_position.y - object_position.y
-        dz = self.__gripper_position.z - object_position.z
-        return (dx * dx + dy * dy) ** 0.5 < POSITION_TOLERANCE and abs(dz) < HEIGHT_TOLERANCE
+        xy_dist = self.get_xy_distance(self.__gripper_position, object_position)
+        z_dist = self.get_z_distance(self.__gripper_position, object_position)
+        return xy_dist < POSITION_TOLERANCE and z_dist < HEIGHT_TOLERANCE
 
     def __is_task_complete(self) -> bool:
         '''
@@ -204,37 +286,44 @@ class MultipleGraspingAnalyzer:
 
         The conditions are:
         1. The timer has started
-        2. All objects have been grasped
-        3. The gripper is opened (the last grasped object is released)
+        2. All objects have been picked and placed
         '''
-        if not self.__objects_status:
+        if not self.__objects_status or self.__timeline['start'] is None:
             return False
         
-        all_grasped = all(obj_info['grasped'] for obj_info in self.__objects_status.values())
-        return self.__start_time is not None and all_grasped and not self.__is_gripper_closed
+        all_picked = all(obj_info['picked'] for obj_info in self.__objects_status.values())
+        all_placed = all(obj_info['placed'] for obj_info in self.__objects_status.values())
+        return all_picked and all_placed
 
     def print_result(self) -> None:
-        if self.__start_time is None or self.__end_time is None:
+        if None in self.__timeline.values() or not self.__objects_status:
             print("[Error] Failed to get experiment result due to the following reason:")
-            if self.__start_time is None:
-                print("    - invalid start time")
-            if self.__end_time is None:
-                print("    - invalid end time")
-            return
-        
-        if not self.__objects_status:
-            print("[Error] Failed to get experiment result due to the following reason:")
-            print("    - empty recorded objects")
+            if self.__timeline['start'] is None:
+                print("  - invalid start time")
+            if self.__timeline['end'] is None:
+                print("  - invalid end time")
+            if not self.__objects_status:
+                print("  - empty recorded objects")
+            elif not all(obj_info['picked'] for obj_info in self.__objects_status.values()):
+                print("  - not all objects picked")
+            elif not all(obj_info['placed'] for obj_info in self.__objects_status.values()):
+                print("  - not all objects placed")
             return
 
-        duration = self.__end_time - self.__start_time
+        duration = self.__timeline['end'] - self.__timeline['start']
         num_objects = len(self.__objects_status)
         print(f"================== Experiment result ==================")
-        print(f"| Task Completion Time (TCT) : {duration:.3f} sec")
-        print(f"| Average Grasping Time (AGT)   : {duration / num_objects:.3f} sec")
+        print(f"| Task Completion Time:\t\t{duration:.3f} sec")
+        print(f"| Average Operation Time:\t{duration / num_objects:.3f} sec")
+        print(f"|")
+        print(f"| Bagfile Timeline:")
+        print(f"| -- Begin:\t{self.__timeline['start']:.3f} sec")
+        for index in range(num_objects):
+            print(f"| -- Enter pick area:\t{self.__timeline['infer'][index]:.3f} sec")
+            print(f"| -- Pick object {index+1}:\t{self.__timeline['picked'][index]:.3f} sec")
+            print(f"| -- Place object {index+1}:\t{self.__timeline['placed'][index]:.3f} sec")
+        print(f"| -- Complete:\t{self.__timeline['end']:.3f} sec")
         print(f"=======================================================")
-        print("[Error] Failed to get experiment result due to invalid start and end time!")
-
 
 
 if __name__ == "__main__":

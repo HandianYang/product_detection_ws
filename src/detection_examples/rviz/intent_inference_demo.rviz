@@ -23,7 +23,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: D435 image
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -50,80 +50,12 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        back_laser_frame:
-          Value: false
-        base_footprint:
-          Value: false
-        base_link:
-          Value: true
-        camera_aligned_depth_to_color_frame:
-          Value: false
-        camera_color_frame:
-          Value: false
-        camera_color_optical_frame:
-          Value: false
-        camera_depth_frame:
-          Value: false
-        camera_depth_optical_frame:
-          Value: false
-        camera_link:
-          Value: false
-        front_laser_frame:
-          Value: false
-        gripper_base:
-          Value: false
-        gripper_left_coupler:
-          Value: false
-        gripper_left_driver:
-          Value: false
-        gripper_left_follower:
-          Value: false
-        gripper_left_pad:
-          Value: false
-        gripper_right_coupler:
-          Value: false
-        gripper_right_driver:
-          Value: false
-        gripper_right_follower:
-          Value: false
-        gripper_right_pad:
-          Value: false
-        imu_link:
-          Value: false
-        merged_laser_frame:
-          Value: false
-        odom:
-          Value: true
-        tm_arm_1_link:
-          Value: false
-        tm_arm_2_link:
-          Value: false
-        tm_base:
-          Value: true
-        tm_base_link:
-          Value: false
-        tm_cntrl_box:
-          Value: false
-        tm_gripper:
-          Value: true
-        tm_shoulder_1_link:
-          Value: false
-        tm_tip_link:
-          Value: false
-        tm_tool0:
-          Value: false
-        tm_wrist_1_link:
-          Value: false
-        tm_wrist_2_link:
-          Value: false
-        tm_wrist_3_link:
-          Value: false
       Marker Alpha: 1
       Marker Scale: 0.5
       Name: TF
@@ -131,57 +63,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        gripper_left_driver:
-          gripper_left_coupler:
-            {}
-        gripper_left_follower:
-          gripper_left_pad:
-            {}
-        gripper_right_driver:
-          gripper_right_coupler:
-            {}
-        gripper_right_follower:
-          gripper_right_pad:
-            {}
-        odom:
-          base_footprint:
-            base_link:
-              back_laser_frame:
-                {}
-              front_laser_frame:
-                {}
-              imu_link:
-                {}
-              merged_laser_frame:
-                {}
-              tm_base:
-                tm_base_link:
-                  tm_shoulder_1_link:
-                    tm_arm_1_link:
-                      tm_arm_2_link:
-                        tm_wrist_1_link:
-                          tm_wrist_2_link:
-                            tm_wrist_3_link:
-                              tm_tip_link:
-                                camera_link:
-                                  camera_aligned_depth_to_color_frame:
-                                    camera_color_optical_frame:
-                                      {}
-                                  camera_color_frame:
-                                    {}
-                                  camera_depth_frame:
-                                    camera_depth_optical_frame:
-                                      {}
-                                gripper_base:
-                                  {}
-                                tm_gripper:
-                                  {}
-                                tm_tool0:
-                                  {}
-              tm_cntrl_box:
-                {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -211,13 +95,13 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /yolo/detected_objects_marker
       Name: Object centroids
       Namespaces:
-        detected_objects: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /marslite_control/gripper_velocity_marker
@@ -239,7 +123,9 @@ Visualization Manager:
       Marker Topic: /marslite_control/intent_belief_marker
       Name: Intent inference
       Namespaces:
-        {}
+        intent_belief: true
+        intent_belief_text: true
+        robot_state: true
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -254,6 +140,153 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: false
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_left_coupler:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_left_driver:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_left_follower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_left_pad:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_left_spring_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_coupler:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_driver:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_follower:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_pad:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gripper_right_spring_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        left_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_arm_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tm_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_cntrl_box:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_gripper:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tm_shoulder_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_tip_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tm_wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tm_wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -282,7 +315,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.7105345726013184
+      Distance: 1.354721188545227
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -290,17 +323,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.3875677287578583
-        Y: 0.5725148916244507
-        Z: 0.9749108552932739
+        X: 0.5586111545562744
+        Y: 0.6480339765548706
+        Z: 0.8388214707374573
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.42539843916893005
+      Pitch: 0.5503990054130554
       Target Frame: <Fixed Frame>
-      Yaw: 4.4035725593566895
+      Yaw: 5.353562831878662
     Saved: ~
 Window Geometry:
   D435 image:

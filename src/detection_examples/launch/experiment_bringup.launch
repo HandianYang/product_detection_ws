@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Launch Realsense camera -->
+  <arg name="pointcloud_enabled" default="True"/>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="align_depth" value="True"/>
+    <arg name="filters" value="pointcloud" if="$(arg pointcloud_enabled)"/>
+  </include>
+
+  <!-- Launch eye-in-hand TF broadcaster -->
+  <include file="$(find detection_examples)/launch/eye_in_hand_publish.launch"/>
+
+  <!-- Launch workspace position calibrator -->
+  <include file="$(find detection_examples)/launch/workspace_position_calibration.launch">
+    <arg name="camera_enabled" value="False"/>
+    <arg name="eye_in_hand_tf_publisher_enabled" value="False"/>
+  </include>
+
+  <!-- Launch YOLO inference module -->
+  <arg name="yolo_inference_method" default="b"/>
+  <group if="$(eval arg('yolo_inference_method') == 'b')">
+    <include file="$(find detection_examples)/launch/yolo_inference_bbox_estimator.launch">
+      <arg name="camera_enabled" value="False"/>
+      <arg name="display_enabled" value="True"/>
+      <arg name="eye_in_hand_tf_publisher_enabled" value="False"/>
+    </include>
+  </group>
+  <group if="$(eval arg('yolo_inference_method') == 'p')">
+    <include file="$(find detection_examples)/launch/yolo_inference_pointcloud_estimator.launch">
+      <arg name="camera_enabled" value="False"/>
+      <arg name="eye_in_hand_tf_publisher_enabled" value="False"/>
+    </include>
+  </group>
+</launch>

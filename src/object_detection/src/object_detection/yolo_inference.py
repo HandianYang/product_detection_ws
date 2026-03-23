@@ -21,9 +21,12 @@ class CentroidEstimator(Enum):
 
 class YoloInference:
     DEFAULT_CONFIDENCE_THRESHOLD = 0.7
-    DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parent.parent.parent / "config/class_list.yaml")
-    DEFAULT_INTRINSICS_PATH = str(Path(__file__).resolve().parent.parent.parent / "config/realsense_intrinsics_20251211.yaml")
-    DEFAULT_WEIGHT_PATH = str(Path(__file__).resolve().parent.parent.parent / "weight/yolo11_v1.pt")
+    DEFAULT_CONFIG_PATH = str(Path(__file__).resolve().parents[2]
+        / "config/class_list.yaml")
+    DEFAULT_INTRINSICS_PATH = str(Path(__file__).resolve().parents[2]
+        / "config/realsense_intrinsics_20251211.yaml")
+    DEFAULT_WEIGHT_PATH = str(Path(__file__).resolve().parents[2]
+        / "weight/yolo11_v1.pt")
 
     def __init__(self, centroid_estimator: CentroidEstimator = CentroidEstimator.BBOX) -> None:
         # parameters

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- Launch Realsense camera -->
+  <arg name="pointcloud_enabled" default="True"/>
+  <arg name="camera_enabled" default="True"/> <!-- False if the camera is already launched-->
+  <group if="$(arg camera_enabled)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="align_depth" value="True"/>
+      <arg name="filters" value="pointcloud" if="$(arg pointcloud_enabled)"/>
+    </include>
+  </group>
+
+  <!-- Launch aruco_ros node -->
+  <node pkg="aruco_ros" type="double" name="aruco_double">
+    <remap from="/camera_info" to="/camera/color/camera_info" />
+    <remap from="/image" to="/camera/color/image_raw" />
+    <param name="image_is_rectified" value="True"/>
+    <param name="marker_size"        value="0.10"/>
+    <param name="marker_id1"         value="0"/>
+    <param name="marker_id2"         value="1"/>
+    <param name="normalizeImage"     value="False"/>
+    <param name="dct_components_to_retain" value="2"/>
+    <param name="parent_name"        value="camera_color_optical_frame"/>
+    <param name="child_name1"        value="shelf_frame"/>
+    <param name="child_name2"        value="warehouse_frame"/>
+  </node>
+
+  <!-- Launch eye-in-hand TF broadcaster -->
+  <arg name="eye_in_hand_tf_publisher_enabled" default="True"/> <!-- False if the publisher is already launched-->
+  <group if="$(arg eye_in_hand_tf_publisher_enabled)">
+    <include file="$(find detection_examples)/launch/eye_in_hand_publish.launch"/>
+  </group>
+
+  <!-- Launch workspace position calibrator-->
+  <node pkg="detection_examples" type="workspace_position_calib_node.py"
+        name="workspace_position_calib_node" output="screen"/>
+</launch>

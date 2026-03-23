@@ -5,6 +5,7 @@
 devel/
 logs/
 bags/
+data/
 build/
 bin/
 lib/
